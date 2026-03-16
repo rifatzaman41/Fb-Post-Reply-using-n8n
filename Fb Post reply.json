@@ -1,0 +1,370 @@
+{
+  "name": "Fb Post reply",
+  "nodes": [
+    {
+      "parameters": {
+        "multipleMethods": true,
+        "path": "f28de942-0fb0-4541-a605-0280639709c3",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -432,
+        -80
+      ],
+      "id": "b8113d5a-b46a-450b-93ad-982344a8b4b0",
+      "name": "Webhook",
+      "webhookId": "f28de942-0fb0-4541-a605-0280639709c3"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "7dc12591-8207-44ba-b7cb-549b67849a95",
+              "leftValue": "={{ $json.query['hub.mode'] }}",
+              "rightValue": "subscribe",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "11bc7812-b343-4b45-a2f4-7a6b2862510c",
+              "leftValue": "={{ $json.query['hub.verify_token'] }}",
+              "rightValue": "rztoken",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -112,
+        -144
+      ],
+      "id": "ff0198ba-fdcf-40e4-9f9e-9152862398aa",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={{ $json.query['hub.challenge'] }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        272,
+        -224
+      ],
+      "id": "1542dac7-78af-4c00-9606-ebffb38e279e",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "404",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        368,
+        -64
+      ],
+      "id": "4ab37747-c507-402b-943f-ae453815ad77",
+      "name": "Respond to Webhook1"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Comment:  {{ $json.body.entry[0].changes[0].value.message }} \nGenerate reply against this comment",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "You are an AI comment-reply assistant for a business.\n\nYour job is to read a Facebook comment and generate a short reply.\n\nOutput Format (STRICT):\ntype, reply\n\nRules for type:\n- Use \"normal\" for positive, neutral, or general comments.\n- Use \"negative\" ONLY if the comment contains complaints, insults, harmful language, sexual words, adultery words, or criticism about the service.\n\nReply Rules:\n- Reply must be short and natural.\n- Reply must be 1–2 sentences only.\n- Be polite and professional.\n- Do NOT use emojis.\n- Do NOT use special characters.\n- Do NOT add explanations.\n\nNegative Reply Behavior:\n- Apologize politely.\n- Offer help or ask for more details.\n\nNormal Reply Behavior:\n- Thank the user or respond politely.\n\nTool Usage:\nIf additional company information is needed to answer the comment, use the tool \"docs Company Info\".\n\nIMPORTANT:\n- Output ONLY in this exact format:\ntype, reply\n- Do not add extra text.\n- Do not add labels.\n- Do not add quotes."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -160,
+        64
+      ],
+      "id": "18b28ea8-2a85-429e-869c-f0002c082057",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -304,
+        240
+      ],
+      "id": "953d7b75-0ef1-4e0d-87e6-ee6158b79b71",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "6KwGNETxowVbvmtB",
+          "name": "Google Gemini(PaLM) Api account 653"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n\t\"Type\": \"\",\n\t\"reply\": \"\"\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        48,
+        240
+      ],
+      "id": "b1960ea6-6875-4555-8dc6-6f49c76ecc3c",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "987e73fc-6326-439d-b6a2-414519ee573b",
+              "leftValue": "={{ $json.output.Type }}",
+              "rightValue": "normal",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        192,
+        64
+      ],
+      "id": "3b6440c9-c333-4c74-b284-c3f1f8cc3978",
+      "name": "If1"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://graph.facebook.com/v21.0/{{ $('Webhook').first().json.body.entry[0].changes[0].value.comment_id }}/comments",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "access_token",
+              "value": "EAAZA14NC9VI4BQ3KTSxxpGzxuMyklPQF3MidYibwZAEqjhaVtGK45RP8lEcqxHAFJylFUi7aJZCTK2EWLZCmUGFKB4tXldOXwfZC76sfMnwUWS1bZA0UJMRp2ylwQxnBj9ZBiAGEeCBQrReYA7weEFyf2uz3eJQZB48mnoyKFOX9jggDCLw3EvLcwiH4DZAEnnWVHLZB6GB0hZC"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "form-urlencoded",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "message",
+              "value": "={{ $json.output.reply }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        496,
+        64
+      ],
+      "id": "57a56a3b-8832-486a-8dcc-9d1973c5fb16",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "method": "DELETE",
+        "url": "=https://graph.facebook.com/v21.0/{{ $('Webhook').item.json.body.entry[0].changes[0].value.comment_id }}",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "access_token",
+              "value": "EAAZA14NC9VI4BQ3KTSxxpGzxuMyklPQF3MidYibwZAEqjhaVtGK45RP8lEcqxHAFJylFUi7aJZCTK2EWLZCmUGFKB4tXldOXwfZC76sfMnwUWS1bZA0UJMRp2ylwQxnBj9ZBiAGEeCBQrReYA7weEFyf2uz3eJQZB48mnoyKFOX9jggDCLw3EvLcwiH4DZAEnnWVHLZB6GB0hZC"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        336,
+        192
+      ],
+      "id": "4af028ef-b7d6-41f0-ad6d-98f1cece2d67",
+      "name": "HTTP Request1"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "documentURL": "https://docs.google.com/document/d/15_EMkFPG32P_bxfmzoBXM1yJqNLV0wXiXMXZ_KHts20/edit?tab=t.0",
+        "simple": false
+      },
+      "type": "n8n-nodes-base.googleDocsTool",
+      "typeVersion": 2,
+      "position": [
+        -48,
+        272
+      ],
+      "id": "af416ba4-b1ce-4f0d-84bd-3ee51b6fd78b",
+      "name": "Company Info",
+      "credentials": {
+        "googleDocsOAuth2Api": {
+          "id": "DWnFSyKt5maGuIZR",
+          "name": "Google Docs account 44"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond to Webhook1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If1": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Company Info": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "8ead5985-a857-440e-bcf6-8bc3f1a7ef24",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "5f00bba974abf03cb5183d4d65f8a9645a781b04770df6a7d08284fca87d50b3"
+  },
+  "id": "bdaQOfb3rkLrEmLv",
+  "tags": []
+}
